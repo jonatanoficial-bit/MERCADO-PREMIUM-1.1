@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Administração</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <img
+        class="brand-logo"
+        src="assets/brand/vale-games-logo.jpg"
+        alt="VALE GAMES"
+        loading="eager"
+        onerror="this.style.display='none'; document.getElementById('brandFallback').style.display='block';"
+      />
+      <div class="brand-text">
+        <div class="brand-name">VALE GAMES</div>
+        <div class="brand-sub" id="brandFallback" style="display:none;">Logo não carregou</div>
+        <div class="brand-sub">Área Administrativa</div>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button id="backBtn" class="icon-button" aria-label="Voltar" title="Voltar">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22"
+          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6" />
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <main class="app-content">
+    <section id="loginSection" class="login-section card">
+      <h2 class="section-title">Login do Administrador</h2>
+
+      <div class="input-group">
+        <label for="adminPassword">Senha</label>
+        <input type="password" id="adminPassword" />
+      </div>
+
+      <button id="loginBtn" class="primary-button full-width">Entrar</button>
+    </section>
+
+    <section id="adminPanel" class="admin-panel card" style="display: none;">
+      <h2 class="section-title">Gerenciar Conteúdo</h2>
+      <div class="dlc-list" id="dlcList"></div>
+
+      <div class="admin-actions actions">
+        <label class="file-upload">
+          <input type="file" id="uploadDlcInput" accept=".json" style="display:none;" />
+          <span class="primary-button">Enviar DLC</span>
+        </label>
+
+        <button id="exportDataBtn" class="secondary-button">Exportar Dados</button>
+        <button id="importDataBtn" class="secondary-button">Importar Dados</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/dlc-loader.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

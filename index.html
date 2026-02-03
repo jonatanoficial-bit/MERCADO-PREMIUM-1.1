@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Lista de Compras</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#0B1B3A" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+  <!-- Ícone (usando o logo atual) -->
+  <link rel="icon" href="assets/brand/logo%20vale%20games.jpeg" />
+  <link rel="apple-touch-icon" href="assets/brand/logo%20vale%20games.jpeg" />
+
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+
+<body>
+  <!-- SPLASH SCREEN (entrada estilo app/jogo) -->
+  <div id="splash" class="splash" aria-hidden="true">
+    <div class="splash-inner">
+      <img
+        class="splash-logo"
+        src="assets/brand/logo%20vale%20games.jpeg"
+        alt="VALE GAMES"
+        loading="eager"
+      />
+      <div class="splash-title">VALE GAMES</div>
+      <div class="splash-subtitle">Lista de Compras</div>
+
+      <div class="splash-loader" aria-hidden="true">
+        <span></span><span></span><span></span>
+      </div>
+
+      <div class="splash-foot">Carregando…</div>
+    </div>
+  </div>
+
+  <header class="app-header">
+    <div class="brand">
+      <img
+        class="brand-logo"
+        src="assets/brand/logo%20vale%20games.jpeg"
+        alt="VALE GAMES"
+        loading="eager"
+      />
+      <div class="brand-text">
+        <div class="brand-name">VALE GAMES</div>
+        <div class="brand-sub">Lista de Compras</div>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button id="adminBtn" class="icon-button" aria-label="Área Administrativa" title="Admin">
+        <!-- engrenagem SVG inline -->
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22"
+          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06
+            a2 2 0 1 1-2.83 2.83l-.06-.06
+            a1.65 1.65 0 0 0-1.82-.33
+            1.65 1.65 0 0 0-1 1.51V21
+            a2 2 0 0 1-4 0v-.09
+            a1.65 1.65 0 0 0-1-1.51
+            1.65 1.65 0 0 0-1.82.33l-.06.06
+            a2 2 0 1 1-2.83-2.83l.06-.06
+            a1.65 1.65 0 0 0 .33-1.82
+            1.65 1.65 0 0 0-1.51-1H3
+            a2 2 0 0 1 0-4h.09
+            a1.65 1.65 0 0 0 1.51-1
+            1.65 1.65 0 0 0-.33-1.82l-.06-.06
+            a2 2 0 0 1 2.83-2.83l.06.06
+            a1.65 1.65 0 0 0 1.82.33
+            a1.65 1.65 0 0 0 1.15-1.7V3
+            a2 2 0 0 1 4 0v.09
+            a1.65 1.65 0 0 0 1.15 1.7
+            a1.65 1.65 0 0 0 1.82-.33l.06-.06
+            a2 2 0 1 1 2.83 2.83l-.06.06
+            a1.65 1.65 0 0 0-.33 1.82
+            a1.65 1.65 0 0 0 1.7 1.15H21
+            a2 2 0 0 1 0 4h-.09
+            a1.65 1.65 0 0 0-1.7 1.15z">
+          </path>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <main class="app-content">
+    <section class="add-item-section card">
+      <h2 class="section-title">Adicionar Item</h2>
+
+      <div class="input-group">
+        <label for="itemName">Item</label>
+        <input type="text" id="itemName" placeholder="Ex: Leite" />
+      </div>
+
+      <div class="input-row">
+        <div class="input-group">
+          <label for="itemQuantity">Quantidade</label>
+          <input type="number" id="itemQuantity" min="1" value="1" />
+        </div>
+
+        <div class="input-group">
+          <label for="itemPrice">Preço (R$)</label>
+          <input type="number" id="itemPrice" min="0" step="0.01" />
+        </div>
+        <button id="ocrPriceBtn" class="tertiary-button full-width ocr-btn" type="button">
+          <span class="btn-icon" aria-hidden="true">📷</span>
+          <span>Ler preço pela câmera</span>
+        </button>
+        <input id="ocrFileInput" type="file" accept="image/*" capture="environment" class="sr-only" />
+      </div>
+
+      <button id="addItemBtn" class="primary-button full-width">
+        <span class="btn-icon" aria-hidden="true">＋</span>
+        <span>Adicionar Item</span>
+      </button>
+    </section>
+
+    <section class="list-section card">
+      <h2 class="section-title">Itens da Lista</h2>
+
+      <div id="itemList" class="item-list"></div>
+
+      <div class="list-summary">
+        <span>Total:</span>
+        <span id="totalValue">R$ 0,00</span>
+      </div>
+
+      <div class="actions">
+        <button id="saveListBtn" class="secondary-button">Salvar Lista</button>
+        <button id="exportPdfBtn" class="secondary-button">Exportar PDF</button>
+        <button id="clearListBtn" class="danger-button">Limpar Lista</button>
+      </div>
+    </section>
+
+    <section class="saved-lists-section card">
+      <h2 class="section-title">Minhas Listas</h2>
+      <div id="savedLists" class="saved-lists"></div>
+    </section>
+  </main>
+  <!-- OCR MODAL -->
+  <div id="ocrModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="modal-backdrop" data-close="true"></div>
+    <div class="modal-card">
+      <div class="modal-head">
+        <div class="modal-title">Lendo preço…</div>
+        <button id="ocrCloseBtn" class="icon-button" aria-label="Fechar" type="button">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="ocr-preview-wrap">
+          <img id="ocrPreview" alt="Imagem capturada" />
+        </div>
+        <div class="ocr-status" id="ocrStatus">Preparando OCR…</div>
+
+        <div class="modal-actions">
+          <button id="ocrRetryBtn" class="secondary-button" type="button">Tirar outra foto</button>
+          <button id="ocrUseBtn" class="primary-button" type="button" disabled>Usar este preço</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" aria-live="polite" aria-atomic="true"></div>
+
+
+  <script src="js/dlc-loader.js"></script>
+  <script src="js/app.js"></script>
+
+  <!-- PDF (CDN) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js" crossorigin="anonymous"></script>
+</body>
+</html>

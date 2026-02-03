@@ -1,0 +1,22 @@
+[
+  {
+    "id": "nutrition_guide",
+    "name": "Guia de Nutrição",
+    "version": "1.0.0",
+    "description": "Sugestões de alimentos saudáveis.",
+    "active": false,
+    "file": "nutrition_guide.json",
+    "tier": "free",
+    "priceBRL": 0
+  },
+  {
+    "id": "holiday_recipes",
+    "name": "Receitas Festivas",
+    "version": "1.0.0",
+    "description": "Categorias de receitas e itens festivos.",
+    "active": false,
+    "file": "holiday_recipes.json",
+    "tier": "premium",
+    "priceBRL": 9.9
+  }
+]

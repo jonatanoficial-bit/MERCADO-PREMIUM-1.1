@@ -1,0 +1,23 @@
+{
+  "name": "VALE GAMES - Lista de Compras",
+  "short_name": "Lista Mercado",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#050A14",
+  "theme_color": "#0B1B3A",
+  "description": "Lista de compras mobile-first com modo sênior, PDF e DLCs.",
+  "icons": [
+    {
+      "src": "assets/brand/logo%20vale%20games.jpeg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/brand/logo%20vale%20games.jpeg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any"
+    }
+  ]
+}
