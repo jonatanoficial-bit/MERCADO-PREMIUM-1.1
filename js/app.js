@@ -76,6 +76,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const ocrUseBtn = document.getElementById("ocrUseBtn");
   const ocrPreview = document.getElementById("ocrPreview");
   const ocrStatus = document.getElementById("ocrStatus");
+  const ocrFastMode = document.getElementById("ocrFastMode");
+  const ocrCropMode = document.getElementById("ocrCropMode");
   const toastEl = document.getElementById("toast");
 
 
@@ -85,7 +87,7 @@ document.addEventListener("DOMContentLoaded", () => {
     itemListContainer, totalValueSpan,
     saveListBtn, exportPdfBtn, clearListBtn,
     savedListsContainer, addItemBtn, adminBtn,
-    ocrPriceBtn, ocrFileInput, ocrModal, ocrCloseBtn, ocrRetryBtn, ocrUseBtn, ocrPreview, ocrStatus, toastEl
+    ocrPriceBtn, ocrFileInput, ocrModal, ocrCloseBtn, ocrRetryBtn, ocrUseBtn, ocrPreview, ocrStatus, ocrFastMode, ocrCropMode, toastEl
   ];
   if (required.some((x) => !x)) {
     failSplash("Arquivos incompletos. Verifique index.html.");
@@ -197,19 +199,84 @@ document.addEventListener("DOMContentLoaded", () => {
     return candidates[0];
   }
 
-  async function recognizePriceFromImage(file) {
+  
+  async function fileToOcrBlob(file, cropEnabled, fastMode) {
+    // Converte a imagem em um blob otimizado para OCR (corte central + redimensionamento)
+    const img = new Image();
+    img.decoding = "async";
+    const url = URL.createObjectURL(file);
+    try {
+      await new Promise((res, rej) => {
+        img.onload = () => res();
+        img.onerror = () => rej(new Error("Imagem inválida"));
+        img.src = url;
+      });
+
+      // Dimensões originais
+      const iw = img.naturalWidth || img.width;
+      const ih = img.naturalHeight || img.height;
+
+      // Define área de corte (central)
+      let sx = 0, sy = 0, sw = iw, sh = ih;
+      if (cropEnabled) {
+        // Foca numa faixa central onde normalmente fica o valor
+        sw = Math.max(1, Math.round(iw * 0.72));
+        sh = Math.max(1, Math.round(ih * 0.42));
+        sx = Math.round((iw - sw) / 2);
+        sy = Math.round((ih - sh) / 2);
+      }
+
+      // Redimensiona para acelerar (mantém leitura boa)
+      const maxW = fastMode ? 900 : 1400;
+      const scale = Math.min(1, maxW / sw);
+      const tw = Math.max(1, Math.round(sw * scale));
+      const th = Math.max(1, Math.round(sh * scale));
+
+      const canvas = document.createElement("canvas");
+      canvas.width = tw;
+      canvas.height = th;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+
+      // Leve aumento de contraste (ajuda em etiqueta/nota fiscal)
+      ctx.filter = "contrast(1.25) brightness(1.05)";
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, tw, th);
+      ctx.filter = "none";
+
+      const blob = await new Promise((resolve) => {
+        // JPEG é menor e suficiente para dígitos
+        canvas.toBlob((b) => resolve(b), "image/jpeg", 0.92);
+      });
+
+      return blob || file;
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }
+
+async function recognizePriceFromImage(file) {
     await ensureTesseract();
+
+    const cropEnabled = !!(ocrCropMode && ocrCropMode.checked);
+    const fastMode = !!(ocrFastMode && ocrFastMode.checked);
 
     const imgUrl = URL.createObjectURL(file);
     ocrPreview.src = imgUrl;
+
+    // Visual: guia de foco no valor
+    if (cropEnabled) {
+      ocrPreview.closest(".ocr-preview-wrap")?.classList.add("is-crop");
+    } else {
+      ocrPreview.closest(".ocr-preview-wrap")?.classList.remove("is-crop");
+    }
 
     ocrStatus.textContent = "Analisando imagem…";
     ocrUseBtn.disabled = true;
     lastOcrPrice = null;
 
     try {
+      const ocrBlob = await fileToOcrBlob(file, cropEnabled, fastMode);
       const { data } = await window.Tesseract.recognize(
-        file,
+        ocrBlob,
         "eng",
         {
           logger: (m) => {
@@ -241,8 +308,6 @@ document.addEventListener("DOMContentLoaded", () => {
     } finally {
       // Mantém preview; não revoga agora para permitir confirmação
     }
-  }
-
   }
 
   function updateListDisplay() {
@@ -563,6 +628,36 @@ document.addEventListener("DOMContentLoaded", () => {
     ocrFileInput.value = "";
     ocrFileInput.click();
   });
+
+  // Preferências do OCR (persistem localmente)
+  const OCR_PREF_KEY = "ocr_prefs_v1";
+  (function loadOcrPrefs() {
+    try {
+      const prefs = JSON.parse(localStorage.getItem(OCR_PREF_KEY) || "{}");
+      if (ocrFastMode && typeof prefs.fastMode === "boolean") ocrFastMode.checked = prefs.fastMode;
+      if (ocrCropMode && typeof prefs.cropEnabled === "boolean") ocrCropMode.checked = prefs.cropEnabled;
+    } catch {}
+  })();
+
+  function saveOcrPrefs() {
+    try {
+      localStorage.setItem(
+        OCR_PREF_KEY,
+        JSON.stringify({
+          fastMode: !!(ocrFastMode && ocrFastMode.checked),
+          cropEnabled: !!(ocrCropMode && ocrCropMode.checked),
+        })
+      );
+    } catch {}
+  }
+
+  if (ocrFastMode) ocrFastMode.addEventListener("change", saveOcrPrefs);
+  if (ocrCropMode) ocrCropMode.addEventListener("change", () => {
+    saveOcrPrefs();
+    const wrap = ocrPreview.closest(".ocr-preview-wrap");
+    if (wrap) wrap.classList.toggle("is-crop", !!ocrCropMode.checked);
+  });
+
 
   ocrFileInput.addEventListener("change", async () => {
     const file = ocrFileInput.files && ocrFileInput.files[0];

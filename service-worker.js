@@ -1,7 +1,7 @@
 /* ==========================================================
    Service Worker (PWA) — Cache simples e confiável
    ========================================================== */
-const CACHE_NAME = "vale-games-mercado-v2";
+const CACHE_NAME = "vale-games-mercado-v3";
 
 const CORE_ASSETS = [
   "./",

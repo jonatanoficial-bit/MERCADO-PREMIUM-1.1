@@ -158,6 +158,18 @@
           <img id="ocrPreview" alt="Imagem capturada" />
         </div>
         <div class="ocr-status" id="ocrStatus">Preparando OCR…</div>
+        <div class="ocr-tools" role="group" aria-label="Opções de leitura">
+          <label class="toggle">
+            <input type="checkbox" id="ocrFastMode" checked />
+            <span>Modo rápido (recomendado)</span>
+          </label>
+          <label class="toggle">
+            <input type="checkbox" id="ocrCropMode" checked />
+            <span>Focar no valor (melhora a leitura)</span>
+          </label>
+          <div class="ocr-hint">Dica: aproxime o celular e deixe o preço bem nítido e centralizado.</div>
+        </div>
+
 
         <div class="modal-actions">
           <button id="ocrRetryBtn" class="secondary-button" type="button">Tirar outra foto</button>
