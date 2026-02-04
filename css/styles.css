@@ -648,3 +648,53 @@ body.mode-senior .icon-button{ min-width: 54px; min-height: 54px; }
 body.mode-senior .item-check{ width:32px; height:32px; }
 
 .toast.show{ display:block !important; }
+
+/* =========================
+   Categorias (IA offline)
+   ========================= */
+.category-header{
+  margin: 14px 0 8px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(45,123,255,.20), rgba(255,211,106,.10));
+  border: 1px solid rgba(255,255,255,.10);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+
+.category-title{
+  font-weight: 800;
+  letter-spacing: .3px;
+}
+
+.category-count{
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.10);
+  border: 1px solid rgba(255,255,255,.12);
+}
+
+.category-pill{
+  margin-top: 6px;
+  align-self: flex-start;
+  border: 1px solid rgba(255,255,255,.16);
+  background: rgba(0,0,0,.18);
+  color: inherit;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-weight: 800;
+  font-size: .85rem;
+  cursor: pointer;
+}
+
+.category-pill:active{
+  transform: scale(.98);
+}
+
+.mode-senior .category-pill{
+  font-size: 1rem;
+  padding: 10px 14px;
+}

@@ -100,6 +100,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let currentItems = [];
 
+  // ===== Categorias (IA offline) =====
+  function categorizeName(name){
+    try{
+      return (window.ValeCategorizer && window.ValeCategorizer.categorize)
+        ? window.ValeCategorizer.categorize(name)
+        : "Outros";
+    }catch(e){
+      return "Outros";
+    }
+  }
+
+  function ensureCategory(item){
+    if (!item) return "Outros";
+    if (!item.category) item.category = categorizeName(item.name);
+    return item.category || "Outros";
+  }
+
+  function categoryOrder(){
+    return (window.ValeCategorizer && window.ValeCategorizer.CATEGORY_ORDER)
+      ? window.ValeCategorizer.CATEGORY_ORDER
+      : ["Outros"];
+  }
+
   // ===== UI: Toast =====
   let toastTimer = null;
   function toast(msg){
@@ -126,7 +149,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function normalizeItemFromSaved(it){
-    return { name: it.name, quantity: it.quantity, price: it.price, bought: !!it.bought };
+    const item = { name: it.name, quantity: it.quantity, price: it.price, bought: !!it.bought, category: it.category || null };
+    item.category = item.category || categorizeName(item.name);
+    return item;
   }
 
   function normalizeCurrentItems(){
@@ -388,11 +413,43 @@ async function recognizePriceFromImage(file) {
       nameEl.className = "item-name";
       nameEl.textContent = item.name;
 
+      const catBtn = document.createElement("button");
+      catBtn.type = "button";
+      catBtn.className = "category-pill";
+      catBtn.setAttribute("aria-label", "Categoria do item. Toque para alterar.");
+      catBtn.textContent = ensureCategory(item);
+
+      catBtn.addEventListener("click", () => {
+        const order = categoryOrder();
+        const menu = order.map((c,i)=> `${i+1}. ${c}`).join("\n");
+        const resp = prompt(`Escolha a categoria para "${item.name}":\n\n${menu}\n\nDigite o número ou o nome da categoria:`, ensureCategory(item));
+        if (!resp) return;
+        let chosen = resp.trim();
+        const n = parseInt(chosen, 10);
+        if (Number.isFinite(n) && n >= 1 && n <= order.length) chosen = order[n-1];
+        // Normaliza para uma categoria existente, senão vira Outros
+        if (!order.includes(chosen)) {
+          // aceita categoria personalizada, mas limita
+          if (chosen.length > 24) chosen = chosen.slice(0,24);
+          if (!chosen) chosen = "Outros";
+        }
+        currentItems[index].category = chosen;
+        try{
+          if (window.ValeCategorizer && window.ValeCategorizer.setOverride){
+            window.ValeCategorizer.setOverride(item.name, chosen);
+          }
+        }catch(e){}
+        updateListDisplay();
+        toast(`Categoria: ${chosen}`);
+      });
+
+
       const metaEl = document.createElement("div");
       metaEl.className = "item-meta";
       metaEl.textContent = `${item.quantity} × ${money(item.price)} = ${money((item.quantity || 0) * (item.price || 0))}`;
 
       info.appendChild(nameEl);
+      info.appendChild(catBtn);
       info.appendChild(metaEl);
 
       left.appendChild(checkWrap);
@@ -421,14 +478,50 @@ async function recognizePriceFromImage(file) {
       return card;
     }
 
-    currentItems.forEach((item, index) => {
-      const card = makeCard(item, index);
-      if (item.bought && boughtListContainer) {
-        boughtListContainer.appendChild(card);
-      } else {
-        toBuyListContainer.appendChild(card);
-      }
-    });
+    
+    // Garante categoria em todos os itens (inclusive listas antigas)
+    currentItems.forEach((it)=> ensureCategory(it));
+
+    function makeCategoryHeader(cat, count){
+      const h = document.createElement("div");
+      h.className = "category-header";
+      h.innerHTML = `<span class="category-title">${cat}</span><span class="category-count">${count}</span>`;
+      return h;
+    }
+
+    function renderGrouped(container, boughtFlag){
+      const order = categoryOrder();
+      // Primeiro percorre categorias conhecidas; depois qualquer categoria fora da lista
+      const seen = new Set(order);
+      const extraCats = [];
+      currentItems.forEach((it)=>{ 
+        if (!!it.bought === boughtFlag){
+          const c = ensureCategory(it);
+          if (!seen.has(c) && !extraCats.includes(c)) extraCats.push(c);
+        }
+      });
+      const cats = order.concat(extraCats);
+
+      cats.forEach((cat)=>{
+        const indices = [];
+        currentItems.forEach((it, idx)=>{
+          if (!!it.bought === boughtFlag && ensureCategory(it) === cat){
+            indices.push(idx);
+          }
+        });
+        if (!indices.length) return;
+
+        container.appendChild(makeCategoryHeader(cat, indices.length));
+        indices.forEach((idx)=>{
+          const card = makeCard(currentItems[idx], idx);
+          container.appendChild(card);
+        });
+      });
+    }
+
+    renderGrouped(toBuyListContainer, false);
+    if (boughtListContainer) renderGrouped(boughtListContainer, true);
+
 
     totalValueSpan.textContent = money(total);
   }
@@ -478,7 +571,7 @@ async function recognizePriceFromImage(file) {
       return;
     }
 
-    currentItems.push({ name, quantity, price, bought: false });
+    currentItems.push({ name, quantity, price, bought: false, category: categorizeName(name) });
     itemNameInput.value = "";
     itemQuantityInput.value = "1";
     itemPriceInput.value = "";
@@ -609,15 +702,14 @@ async function recognizePriceFromImage(file) {
       doc.setFontSize(14);
       doc.text(listName, 14, 18);
 
-      const body = items.map((it) => [
-        it.name,
-        String(it.quantity),
-        money(it.price),
-        money(it.quantity * it.price),
-      ]);
+      const body = items.map((it) => {
+        const cat = (it.category || categorizeName(it.name) || "Outros");
+        const status = it.bought ? "Comprado" : "A comprar";
+        return [cat, it.name, String(it.quantity), money(it.price), money(it.quantity * it.price), status];
+      });
 
       window.jspdf.autoTable(doc, {
-        head: [["Item", "Quantidade", "Preço", "Subtotal"]],
+        head: [["Categoria","Item","Quantidade","Preço","Subtotal","Status"]],
         body,
         startY: 24,
       });
