@@ -60,13 +60,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const itemNameInput = document.getElementById("itemName");
   const itemQuantityInput = document.getElementById("itemQuantity");
   const itemPriceInput = document.getElementById("itemPrice");
-  const itemListContainer = document.getElementById("itemList");
+  const toBuyListContainer = document.getElementById("toBuyList");
+  const boughtListContainer = document.getElementById("boughtList");
   const totalValueSpan = document.getElementById("totalValue");
   const saveListBtn = document.getElementById("saveListBtn");
   const exportPdfBtn = document.getElementById("exportPdfBtn");
   const clearListBtn = document.getElementById("clearListBtn");
   const savedListsContainer = document.getElementById("savedLists");
   const addItemBtn = document.getElementById("addItemBtn");
+  const seniorModeBtn = document.getElementById("seniorModeBtn");
+  const clearBoughtBtn = document.getElementById("clearBoughtBtn");
+  const moveBoughtBtn = document.getElementById("moveBoughtBtn");
   const adminBtn = document.getElementById("adminBtn");
   const ocrPriceBtn = document.getElementById("ocrPriceBtn");
   const ocrFileInput = document.getElementById("ocrFileInput");
@@ -84,9 +88,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // Se por algum motivo o HTML mudou e faltou algo, não trava no splash
   const required = [
     itemNameInput, itemQuantityInput, itemPriceInput,
-    itemListContainer, totalValueSpan,
+    toBuyListContainer, boughtListContainer, totalValueSpan,
     saveListBtn, exportPdfBtn, clearListBtn,
-    savedListsContainer, addItemBtn, adminBtn,
+    savedListsContainer, addItemBtn, seniorModeBtn, clearBoughtBtn, moveBoughtBtn, adminBtn,
     ocrPriceBtn, ocrFileInput, ocrModal, ocrCloseBtn, ocrRetryBtn, ocrUseBtn, ocrPreview, ocrStatus, ocrFastMode, ocrCropMode, toastEl
   ];
   if (required.some((x) => !x)) {
@@ -96,10 +100,44 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let currentItems = [];
 
+  // ===== UI: Toast =====
+  let toastTimer = null;
+  function toast(msg){
+    if (!toastEl) return;
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=> toastEl.classList.remove("show"), 1800);
+  }
+
+  // ===== Modo Sênior =====
+  function setSeniorMode(on){
+    document.body.classList.toggle("mode-senior", !!on);
+    if (seniorModeBtn) seniorModeBtn.setAttribute("aria-pressed", on ? "true" : "false");
+    localStorage.setItem("modeSenior", on ? "1" : "0");
+    toast(on ? "Modo Sênior ativado" : "Modo Sênior desativado");
+  }
+  const isSenior = localStorage.getItem("modeSenior") === "1";
+  if (isSenior) document.body.classList.add("mode-senior");
+  if (seniorModeBtn) {
+    seniorModeBtn.addEventListener("click", () => {
+      setSeniorMode(!document.body.classList.contains("mode-senior"));
+    });
+  }
+
+  function normalizeItemFromSaved(it){
+    return { name: it.name, quantity: it.quantity, price: it.price, bought: !!it.bought };
+  }
+
+  function normalizeCurrentItems(){
+    currentItems = currentItems.map((it)=> ({...it, bought: !!it.bought}));
+  }
+
   function money(n) {
     const v = Number.isFinite(n) ? n : 0;
     return `R$ ${v.toFixed(2)}`;
 
+  }
 
   // ===== UI helpers (Toast + Modal) =====
   let lastOcrPrice = null;
@@ -311,14 +349,37 @@ async function recognizePriceFromImage(file) {
   }
 
   function updateListDisplay() {
-    itemListContainer.innerHTML = "";
+    toBuyListContainer.innerHTML = "";
+    if (boughtListContainer) boughtListContainer.innerHTML = "";
+
     let total = 0;
+    currentItems.forEach((it) => {
+      total += (Number(it.quantity) || 0) * (Number(it.price) || 0);
+    });
 
-    currentItems.forEach((item, index) => {
-      total += item.quantity * item.price;
-
+    function makeCard(item, index) {
       const card = document.createElement("div");
-      card.className = "item-card";
+      card.className = "item-card" + (item.bought ? " is-bought" : "");
+
+      const left = document.createElement("div");
+      left.className = "item-left";
+
+      const checkWrap = document.createElement("label");
+      checkWrap.className = "check-wrap";
+
+      const check = document.createElement("input");
+      check.type = "checkbox";
+      check.className = "item-check";
+      check.checked = !!item.bought;
+      check.setAttribute("aria-label", item.bought ? "Item comprado" : "Item a comprar");
+
+      check.addEventListener("change", () => {
+        currentItems[index].bought = check.checked;
+        updateListDisplay();
+        toast(check.checked ? "Marcado como comprado" : "Movido para a comprar");
+      });
+
+      checkWrap.appendChild(check);
 
       const info = document.createElement("div");
       info.className = "item-info";
@@ -329,10 +390,13 @@ async function recognizePriceFromImage(file) {
 
       const metaEl = document.createElement("div");
       metaEl.className = "item-meta";
-      metaEl.textContent = `${item.quantity} × ${money(item.price)} = ${money(item.quantity * item.price)}`;
+      metaEl.textContent = `${item.quantity} × ${money(item.price)} = ${money((item.quantity || 0) * (item.price || 0))}`;
 
       info.appendChild(nameEl);
       info.appendChild(metaEl);
+
+      left.appendChild(checkWrap);
+      left.appendChild(info);
 
       const actions = document.createElement("div");
       actions.className = "item-actions";
@@ -347,38 +411,80 @@ async function recognizePriceFromImage(file) {
       removeBtn.addEventListener("click", () => {
         currentItems.splice(index, 1);
         updateListDisplay();
+        toast("Item removido");
       });
 
       actions.appendChild(removeBtn);
-      card.appendChild(info);
+
+      card.appendChild(left);
       card.appendChild(actions);
-      itemListContainer.appendChild(card);
+      return card;
+    }
+
+    currentItems.forEach((item, index) => {
+      const card = makeCard(item, index);
+      if (item.bought && boughtListContainer) {
+        boughtListContainer.appendChild(card);
+      } else {
+        toBuyListContainer.appendChild(card);
+      }
     });
 
     totalValueSpan.textContent = money(total);
   }
 
   function addItem() {
-    const name = itemNameInput.value.trim();
-    const quantity = parseFloat(itemQuantityInput.value) || 0;
-    const price = parseFloat(itemPriceInput.value) || 0;
+    const raw = itemNameInput.value.trim();
 
-    if (!name) {
+    if (!raw) {
       alert("Informe o nome do item.");
       itemNameInput.focus();
       return;
     }
+
+    let quantity = parseFloat(itemQuantityInput.value) || 1;
+    let price = parseFloat(itemPriceInput.value) || 0;
+    let name = raw;
+
+    const cleaned = raw.replace(/\s+/g, " ").trim();
+    const tokens = cleaned.split(" ");
+
+    if (tokens.length >= 2 && /^[0-9]+([.,][0-9]+)?$/.test(tokens[0])) {
+      const q = parseFloat(tokens[0].replace(",", "."));
+      if (Number.isFinite(q) && q > 0) {
+        quantity = q;
+        tokens.shift();
+      }
+    }
+
+    const last = tokens[tokens.length - 1];
+    if (last && /[0-9]/.test(last)) {
+      const cand = last.replace(/[^\d.,]/g, "");
+      const normalized = cand.includes(",") && cand.includes(".")
+        ? cand.replace(/\./g, "").replace(",", ".")
+        : cand.replace(",", ".");
+      const p = parseFloat(normalized);
+      if (Number.isFinite(p)) {
+        price = p;
+        tokens.pop();
+      }
+    }
+
+    name = tokens.join(" ").trim();
+    if (!name) name = raw;
+
     if (quantity <= 0 || price < 0) {
       alert("Quantidade e preço devem ser válidos.");
       return;
     }
 
-    currentItems.push({ name, quantity, price });
+    currentItems.push({ name, quantity, price, bought: false });
     itemNameInput.value = "";
     itemQuantityInput.value = "1";
     itemPriceInput.value = "";
     updateListDisplay();
     itemNameInput.focus();
+    toast("Item adicionado");
   }
 
   function generateDefaultListName() {
@@ -449,7 +555,8 @@ async function recognizePriceFromImage(file) {
       loadBtn.textContent = "Carregar";
       loadBtn.addEventListener("click", () => {
         if (currentItems.length > 0 && !confirm("A lista atual será substituída. Continuar?")) return;
-        currentItems = (list.items || []).map((i) => ({ ...i }));
+        currentItems = (list.items || []).map(normalizeItemFromSaved);
+        normalizeCurrentItems();
         updateListDisplay();
       });
 
@@ -619,6 +726,44 @@ async function recognizePriceFromImage(file) {
   addItemBtn.addEventListener("click", addItem);
   saveListBtn.addEventListener("click", saveCurrentList);
   exportPdfBtn.addEventListener("click", () => exportListToPdf(currentItems, "Lista Atual"));
+  if (clearBoughtBtn) {
+    clearBoughtBtn.addEventListener("click", () => {
+      const before = currentItems.length;
+      currentItems = currentItems.filter((it) => !it.bought);
+      if (currentItems.length !== before) {
+        updateListDisplay();
+        toast("Comprados limpos");
+      } else {
+        toast("Nenhum comprado para limpar");
+      }
+    });
+  }
+
+  if (moveBoughtBtn) {
+    moveBoughtBtn.addEventListener("click", () => {
+      const bought = currentItems.filter((it) => it.bought);
+      if (bought.length === 0) {
+        toast("Nenhum item comprado");
+        return;
+      }
+      // cria uma nova lista salva só com comprados e remove-os da lista atual
+      const lists = JSON.parse(localStorage.getItem("shoppingLists") || "[]");
+      const id = Date.now();
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const name = `Comprados ${year}-${month}`;
+      const total = bought.reduce((sum, it) => sum + (it.quantity||0)*(it.price||0), 0);
+      lists.push({ id, name, items: bought, total, createdAt: new Date().toISOString() });
+      localStorage.setItem("shoppingLists", JSON.stringify(lists));
+
+      currentItems = currentItems.filter((it) => !it.bought);
+      updateListDisplay();
+      loadSavedLists();
+      toast("Comprados movidos");
+    });
+  }
+
   clearListBtn.addEventListener("click", clearCurrentList);
 
 

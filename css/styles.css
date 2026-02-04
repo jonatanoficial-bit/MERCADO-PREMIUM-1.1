@@ -605,3 +605,46 @@ body{
   z-index:99999;
 }
 .toast.is-show{ display:block; }
+
+
+/* =======================
+   ETAPA 3 — Modo Sênior + Comprado/A comprar
+   ======================= */
+.list-groups{ display:flex; flex-direction:column; gap:14px; }
+.list-group{ padding:10px; border-radius:16px; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08); }
+.group-title{ font-weight:800; letter-spacing:.2px; margin:6px 6px 10px; font-size:1.02rem; opacity:.95; }
+
+.item-card{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.item-left{ display:flex; align-items:center; gap:12px; min-width:0; flex:1; }
+.check-wrap{ display:flex; align-items:center; }
+.item-check{
+  width:26px; height:26px; border-radius:8px;
+  accent-color: var(--gold-1);
+}
+.item-card.is-bought{ opacity:.68; }
+.item-card.is-bought .item-name{ text-decoration: line-through; }
+
+.toast{
+  position:fixed; left:50%; bottom:22px; transform:translateX(-50%);
+  background: rgba(10,18,40,.92);
+  border: 1px solid rgba(255,255,255,.12);
+  padding:10px 14px; border-radius:14px;
+  box-shadow: 0 16px 40px rgba(0,0,0,.35);
+  z-index: 9999;
+  font-weight:700;
+}
+.toast[hidden]{ display:none; }
+
+body.mode-senior{
+  font-size: 118%;
+}
+body.mode-senior .section-title{ font-size:1.35rem; }
+body.mode-senior input{ font-size:1.12rem; padding:16px 14px; }
+body.mode-senior .primary-button, body.mode-senior .secondary-button, body.mode-senior .danger-button{
+  min-height: 58px;
+  font-size: 1.1rem;
+}
+body.mode-senior .icon-button{ min-width: 54px; min-height: 54px; }
+body.mode-senior .item-check{ width:32px; height:32px; }
+
+.toast.show{ display:block !important; }
