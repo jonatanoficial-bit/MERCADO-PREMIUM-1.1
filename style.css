@@ -1,0 +1,5 @@
+
+body { font-family: system-ui; padding: 16px; }
+button, input { font-size: 18px; padding: 12px; margin: 4px 0; width: 100%; }
+.senior body, .senior button, .senior input { font-size: 26px; }
+li { list-style: none; padding: 10px; border-bottom: 1px solid #ddd; }

@@ -1,19 +1,21 @@
 /* ==========================================================
    Service Worker (PWA) — Cache simples e confiável
    ========================================================== */
-const CACHE_NAME = "vale-games-mercado-v5";
+const CACHE_NAME = "vale-games-mercado-v6-build-2026-03-09-1057";
 
 const CORE_ASSETS = [
   "./",
   "./index.html",
   "./admin.html",
+  "./manifest.webmanifest",
   "./css/styles.css",
   "./js/app.js",
   "./js/categorizer.js",
   "./js/admin.js",
   "./js/dlc-loader.js",
   "./dlc/manifest.json",
-  "./assets/brand/logo%20vale%20games.jpeg"
+  "./assets/brand/logo%20vale%20games.jpeg",
+  "./assets/icons/accessibility.svg"
 ];
 
 self.addEventListener("install", (event) => {

@@ -1,0 +1,14 @@
+{
+  "app_name": "Mercado Premium",
+  "version": "1.2.0",
+  "build_id": "2026.03.09-1212",
+  "build_timestamp_utc": "2026-03-09T12:12:33Z",
+  "build_human": "09/03/2026 12:12 UTC",
+  "project_completion_percent": 58,
+  "release_notes": [
+    "Instalacao PWA com botao visivel e prompt nativo quando suportado",
+    "Fallback guiado para iPhone/iPad e navegadores sem prompt nativo",
+    "Novos icones PWA 192x192 e 512x512",
+    "Atualizacao do service worker e manifest para deploy estatico em Vercel/GitHub"
+  ]
+}

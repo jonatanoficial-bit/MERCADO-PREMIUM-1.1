@@ -55,6 +55,7 @@
     </div>
 
     <div class="header-actions">
+      <button id="installAppBtn" class="primary-button install-header-btn" type="button">Instalar app</button>
       <button id="adminBtn" class="icon-button" aria-label="Área Administrativa" title="Admin">
 
         <!-- engrenagem SVG inline -->
@@ -95,6 +96,19 @@
   </header>
 
   <main class="app-content">
+    <section class="install-hero card">
+      <div class="install-hero-copy">
+        <div class="eyebrow">Build comercial mobile</div>
+        <h2 class="section-title">Instale e use no celular como app</h2>
+        <p class="install-text">Abra em Android ou iPhone, toque no botão de instalação e fixe o app na tela inicial para compras mais rápidas no mercado.</p>
+        <div class="install-actions-row">
+          <button id="installHeroBtn" class="primary-button" type="button">Baixar no celular</button>
+          <div id="installStatus" class="install-status" aria-live="polite">Pronto para instalar</div>
+        </div>
+      </div>
+      <div class="build-badge" id="buildBadge">BUILD 2026.03.09-1057</div>
+    </section>
+
     <section class="add-item-section card">
       <h2 class="section-title">Adicionar Item</h2>
 
@@ -113,11 +127,25 @@
           <label for="itemPrice">Preço (R$)</label>
           <input type="number" id="itemPrice" min="0" step="0.01" />
         </div>
+      </div>
+
+      <div class="smart-tools-grid">
         <button id="ocrPriceBtn" class="tertiary-button full-width ocr-btn" type="button">
           <span class="btn-icon" aria-hidden="true">📷</span>
           <span>Ler preço pela câmera</span>
         </button>
-        <input id="ocrFileInput" type="file" accept="image/*" capture="environment" class="sr-only" />
+        <button id="scanBarcodeBtn" class="secondary-button full-width" type="button">
+          <span class="btn-icon" aria-hidden="true">▦</span>
+          <span>Ler código de barras</span>
+        </button>
+      </div>
+      <input id="ocrFileInput" type="file" accept="image/*" capture="environment" class="sr-only" />
+      <input id="barcodeFileInput" type="file" accept="image/*" capture="environment" class="sr-only" />
+
+      <div class="input-group compact-group">
+        <label for="barcodeValue">Código de barras</label>
+        <input type="text" id="barcodeValue" inputmode="numeric" placeholder="Opcional: escaneie ou digite o código" />
+        <small id="barcodeStatus" class="helper-text">Ao reconhecer um produto já usado, o app preenche nome e preço automaticamente.</small>
       </div>
 
       <button id="addItemBtn" class="primary-button full-width">
@@ -158,6 +186,10 @@
       <h2 class="section-title">Minhas Listas</h2>
       <div id="savedLists" class="saved-lists"></div>
     </section>
+      <footer class="build-footer">
+      <div id="buildInfoLine">Build 2026.03.09-1057 • 09/03/2026 10:57 BRT</div>
+      <div>Projeto Mercado Premium • foco em uso simples, rápido e comercial.</div>
+    </footer>
   </main>
   <!-- OCR MODAL -->
   <div id="ocrModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true">

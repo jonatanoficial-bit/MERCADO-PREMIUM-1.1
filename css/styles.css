@@ -698,3 +698,104 @@ body.mode-senior .item-check{ width:32px; height:32px; }
   font-size: 1rem;
   padding: 10px 14px;
 }
+
+
+.install-header-btn{
+  display:none;
+  padding:.72rem 1rem;
+  white-space:nowrap;
+}
+
+.install-hero{
+  display:grid;
+  grid-template-columns: 1fr auto;
+  gap:16px;
+  align-items:center;
+  margin-bottom:18px;
+  background:
+    radial-gradient(600px 240px at 10% 10%, rgba(45,123,255,.18), transparent 60%),
+    radial-gradient(500px 220px at 90% 10%, rgba(255,180,0,.12), transparent 60%),
+    rgba(255,255,255,.06);
+}
+
+.eyebrow{
+  display:inline-flex;
+  padding:.38rem .7rem;
+  border-radius:999px;
+  background:rgba(255,255,255,.09);
+  color:var(--gold-0);
+  font-weight:800;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  font-size:.74rem;
+}
+
+.install-text, .helper-text{
+  color:var(--muted);
+  line-height:1.45;
+}
+
+.install-actions-row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:12px;
+  align-items:center;
+  margin-top:12px;
+}
+
+.install-status{
+  min-height:24px;
+  padding:.45rem .8rem;
+  border-radius:999px;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.1);
+  font-size:.92rem;
+}
+
+.build-badge{
+  align-self:start;
+  padding:.65rem .9rem;
+  border-radius:16px;
+  background:linear-gradient(90deg, rgba(255,211,106,.18), rgba(45,123,255,.18));
+  border:1px solid rgba(255,255,255,.12);
+  color:var(--text);
+  font-weight:800;
+  box-shadow:0 14px 40px rgba(0,0,0,.25);
+}
+
+.smart-tools-grid{
+  display:grid;
+  grid-template-columns:repeat(2, minmax(0, 1fr));
+  gap:12px;
+  margin-top:10px;
+}
+
+.compact-group{
+  margin-top:12px;
+}
+
+.build-footer{
+  padding: 0 1rem 1.5rem;
+  text-align:center;
+  color:var(--muted);
+  font-size:.92rem;
+}
+
+.helper-text.is-ok{
+  color:#9ef6b0;
+}
+
+.helper-text.is-warn{
+  color:#ffd36a;
+}
+
+@media (max-width: 720px){
+  .install-hero{ grid-template-columns:1fr; }
+  .build-badge{ justify-self:start; }
+  .install-header-btn{ display:none; }
+  .smart-tools-grid{ grid-template-columns:1fr; }
+}
+
+@media (min-width: 721px){
+  .install-header-btn{ display:inline-flex; align-items:center; }
+}

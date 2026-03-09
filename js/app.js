@@ -4,6 +4,9 @@
  * ========================================================================== */
 
 document.addEventListener("DOMContentLoaded", () => {
+  const BUILD_INFO = { code: "2026.03.09-1057", label: "09/03/2026 10:57 BRT", percentComplete: 66 };
+  let deferredInstallPrompt = null;
+  let currentBarcode = "";
   // ===== SPLASH =====
   const splash = document.getElementById("splash");
   const splashFoot = splash ? splash.querySelector(".splash-foot") : null;
@@ -60,6 +63,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const itemNameInput = document.getElementById("itemName");
   const itemQuantityInput = document.getElementById("itemQuantity");
   const itemPriceInput = document.getElementById("itemPrice");
+  const barcodeValueInput = document.getElementById("barcodeValue");
+  const barcodeStatus = document.getElementById("barcodeStatus");
+  const scanBarcodeBtn = document.getElementById("scanBarcodeBtn");
+  const barcodeFileInput = document.getElementById("barcodeFileInput");
+  const installHeroBtn = document.getElementById("installHeroBtn");
+  const installAppBtn = document.getElementById("installAppBtn");
+  const installStatus = document.getElementById("installStatus");
+  const buildBadge = document.getElementById("buildBadge");
+  const buildInfoLine = document.getElementById("buildInfoLine");
   const toBuyListContainer = document.getElementById("toBuyList");
   const boughtListContainer = document.getElementById("boughtList");
   const totalValueSpan = document.getElementById("totalValue");
@@ -373,6 +385,157 @@ async function recognizePriceFromImage(file) {
     }
   }
 
+  const PRODUCT_MEMORY_KEY = "market_product_memory_v1";
+
+  function applyBuildInfo() {
+    if (buildBadge) buildBadge.textContent = `BUILD ${BUILD_INFO.code}`;
+    if (buildInfoLine) buildInfoLine.textContent = `Build ${BUILD_INFO.code} • ${BUILD_INFO.label} • Conclusão ${BUILD_INFO.percentComplete}%`;
+    document.title = `Mercado Premium • Build ${BUILD_INFO.code}`;
+  }
+
+  function getProductMemory() {
+    try { return JSON.parse(localStorage.getItem(PRODUCT_MEMORY_KEY) || "{}"); } catch { return {}; }
+  }
+
+  function saveProductMemory(map) {
+    try { localStorage.setItem(PRODUCT_MEMORY_KEY, JSON.stringify(map)); } catch {}
+  }
+
+  function setBarcodeStatus(message, tone) {
+    if (!barcodeStatus) return;
+    barcodeStatus.textContent = message;
+    barcodeStatus.classList.remove("is-ok", "is-warn");
+    if (tone === "ok") barcodeStatus.classList.add("is-ok");
+    if (tone === "warn") barcodeStatus.classList.add("is-warn");
+  }
+
+  function normalizeBarcode(value) {
+    return String(value || "").replace(/\D+/g, "").trim();
+  }
+
+  function rememberProductProfile(item) {
+    const barcode = normalizeBarcode(item.barcode || currentBarcode || (barcodeValueInput && barcodeValueInput.value));
+    if (!barcode) return;
+    const db = getProductMemory();
+    db[barcode] = {
+      barcode,
+      name: item.name,
+      price: Number(item.price) || 0,
+      category: item.category || categorizeName(item.name),
+      updatedAt: new Date().toISOString()
+    };
+    saveProductMemory(db);
+  }
+
+  function applyRememberedProduct(barcode) {
+    const code = normalizeBarcode(barcode);
+    if (!code) return false;
+    const db = getProductMemory();
+    const found = db[code];
+    if (!found) {
+      setBarcodeStatus(`Código ${code} reconhecido. Digite o nome do produto para salvar este item nas próximas compras.`, "warn");
+      currentBarcode = code;
+      if (barcodeValueInput) barcodeValueInput.value = code;
+      return false;
+    }
+
+    currentBarcode = code;
+    if (barcodeValueInput) barcodeValueInput.value = code;
+    if (itemNameInput && !itemNameInput.value.trim()) itemNameInput.value = found.name || "";
+    if (itemPriceInput && (!parseFloat(itemPriceInput.value) || parseFloat(itemPriceInput.value) <= 0) && Number(found.price) > 0) {
+      itemPriceInput.value = Number(found.price).toFixed(2);
+    }
+    setBarcodeStatus(`Produto reconhecido: ${found.name} • último preço ${money(found.price || 0)}`, "ok");
+    return true;
+  }
+
+  function isIos() {
+    return /iphone|ipad|ipod/i.test(navigator.userAgent || "");
+  }
+
+  function isStandalone() {
+    return window.matchMedia && window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  }
+
+  function updateInstallStatus(message) {
+    if (installStatus) installStatus.textContent = message;
+  }
+
+  async function triggerInstall() {
+    if (deferredInstallPrompt) {
+      deferredInstallPrompt.prompt();
+      const choice = await deferredInstallPrompt.userChoice.catch(() => null);
+      deferredInstallPrompt = null;
+      updateInstallStatus(choice && choice.outcome === 'accepted' ? 'Instalação iniciada no celular.' : 'Instalação cancelada. Você pode tentar novamente.');
+      return;
+    }
+    if (isStandalone()) {
+      updateInstallStatus('O app já está instalado neste aparelho.');
+      return;
+    }
+    if (isIos()) {
+      updateInstallStatus('No iPhone/iPad: toque em Compartilhar e depois em Adicionar à Tela de Início.');
+      return;
+    }
+    updateInstallStatus('Abra no Chrome/Edge do celular para instalar o app.');
+  }
+
+  window.addEventListener('beforeinstallprompt', (event) => {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+    updateInstallStatus('Instalação pronta. Toque no botão para instalar.');
+  });
+
+  window.addEventListener('appinstalled', () => {
+    deferredInstallPrompt = null;
+    updateInstallStatus('App instalado com sucesso.');
+  });
+
+  async function loadScriptOnceSafe(src) {
+    const existing = document.querySelector(`script[data-src="${src}"]`);
+    if (existing) return;
+    await new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = src;
+      s.async = true;
+      s.defer = true;
+      s.setAttribute('data-src', src);
+      s.onload = resolve;
+      s.onerror = () => reject(new Error('Falha ao carregar script externo'));
+      document.head.appendChild(s);
+    });
+  }
+
+  async function decodeBarcodeFromFile(file) {
+    const imageBitmap = await createImageBitmap(file);
+    try {
+      if ('BarcodeDetector' in window) {
+        const detector = new window.BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128'] });
+        const codes = await detector.detect(imageBitmap);
+        if (codes && codes[0] && codes[0].rawValue) return normalizeBarcode(codes[0].rawValue);
+      }
+    } catch {}
+
+    await loadScriptOnceSafe('https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js');
+    if (!window.ZXing || !window.ZXing.BrowserMultiFormatReader) throw new Error('Leitor de código de barras indisponível');
+
+    const canvas = document.createElement('canvas');
+    canvas.width = imageBitmap.width;
+    canvas.height = imageBitmap.height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(imageBitmap, 0, 0);
+    const dataUrl = canvas.toDataURL('image/png');
+    const img = document.createElement('img');
+    img.src = dataUrl;
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = reject;
+    });
+    const reader = new window.ZXing.BrowserMultiFormatReader();
+    const result = await reader.decodeFromImageElement(img);
+    return normalizeBarcode(result && result.text);
+  }
+
   function updateListDisplay() {
     toBuyListContainer.innerHTML = "";
     if (boughtListContainer) boughtListContainer.innerHTML = "";
@@ -571,10 +734,15 @@ async function recognizePriceFromImage(file) {
       return;
     }
 
-    currentItems.push({ name, quantity, price, bought: false, category: categorizeName(name) });
+    const newItem = { name, quantity, price, bought: false, category: categorizeName(name), barcode: normalizeBarcode(currentBarcode || (barcodeValueInput && barcodeValueInput.value)) };
+    currentItems.push(newItem);
+    rememberProductProfile(newItem);
     itemNameInput.value = "";
     itemQuantityInput.value = "1";
     itemPriceInput.value = "";
+    currentBarcode = "";
+    if (barcodeValueInput) barcodeValueInput.value = "";
+    setBarcodeStatus("Ao reconhecer um produto já usado, o app preenche nome e preço automaticamente.");
     updateListDisplay();
     itemNameInput.focus();
     toast("Item adicionado");
@@ -806,7 +974,10 @@ async function recognizePriceFromImage(file) {
 
     // 2) Render básico
     setSplashText("Finalizando…");
+    applyBuildInfo();
     populateItemSuggestions();
+    updateInstallStatus(isStandalone() ? "App já instalado neste aparelho." : (isIos() ? "No iPhone/iPad use Compartilhar > Adicionar à Tela de Início." : "Abra no celular e toque em instalar."));
+    setBarcodeStatus("Ao reconhecer um produto já usado, o app preenche nome e preço automaticamente.");
     updateListDisplay();
     loadSavedLists();
 
@@ -929,6 +1100,50 @@ async function recognizePriceFromImage(file) {
     itemPriceInput.focus();
   });
 
+
+  if (installHeroBtn) installHeroBtn.addEventListener('click', triggerInstall);
+  if (installAppBtn) installAppBtn.addEventListener('click', triggerInstall);
+
+  if (barcodeValueInput) {
+    barcodeValueInput.addEventListener('change', () => {
+      const code = normalizeBarcode(barcodeValueInput.value);
+      barcodeValueInput.value = code;
+      if (!code) {
+        currentBarcode = '';
+        setBarcodeStatus('Ao reconhecer um produto já usado, o app preenche nome e preço automaticamente.');
+        return;
+      }
+      applyRememberedProduct(code);
+    });
+  }
+
+  if (scanBarcodeBtn && barcodeFileInput) {
+    scanBarcodeBtn.addEventListener('click', () => {
+      barcodeFileInput.value = '';
+      barcodeFileInput.click();
+    });
+
+    barcodeFileInput.addEventListener('change', async () => {
+      const file = barcodeFileInput.files && barcodeFileInput.files[0];
+      if (!file) return;
+      setBarcodeStatus('Lendo código de barras...');
+      try {
+        const code = await decodeBarcodeFromFile(file);
+        if (!code) {
+          setBarcodeStatus('Não consegui ler o código. Tente aproximar mais a câmera.', 'warn');
+          showToast('Não consegui ler o código de barras.');
+          return;
+        }
+        const remembered = applyRememberedProduct(code);
+        if (!remembered) showToast(`Código ${code} lido. Complete o nome do item.`);
+        else showToast('Produto reconhecido automaticamente.');
+      } catch (error) {
+        console.error(error);
+        setBarcodeStatus('Falha ao ler o código. Tente novamente com mais luz.', 'warn');
+        showToast('Erro ao ler o código de barras.');
+      }
+    });
+  }
 
   adminBtn.addEventListener("click", () => (window.location.href = "admin.html"));
 

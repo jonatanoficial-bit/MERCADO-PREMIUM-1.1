@@ -1,23 +1,32 @@
 {
-  "name": "VALE GAMES - Lista de Compras",
-  "short_name": "Lista Mercado",
+  "id": "./",
+  "name": "Mercado Premium",
+  "short_name": "Mercado",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#050A14",
   "theme_color": "#0B1B3A",
-  "description": "Lista de compras mobile-first com modo sênior, PDF e DLCs.",
+  "description": "App de compras de supermercado com foco em rapidez, modo sênior, OCR, leitura de código de barras e uso offline.",
   "icons": [
     {
       "src": "assets/brand/logo%20vale%20games.jpeg",
       "sizes": "192x192",
       "type": "image/jpeg",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
       "src": "assets/brand/logo%20vale%20games.jpeg",
       "sizes": "512x512",
       "type": "image/jpeg",
-      "purpose": "any"
+      "purpose": "any maskable"
     }
-  ]
+  ],
+  "categories": [
+    "shopping",
+    "productivity",
+    "utilities"
+  ],
+  "lang": "pt-BR"
 }
